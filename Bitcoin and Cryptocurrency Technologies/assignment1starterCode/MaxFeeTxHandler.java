@@ -6,7 +6,19 @@ public class MaxFeeTxHandler {
      * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
      * constructor.
      */
+	private static class Node {
+		Transaction tx;
+		int index;
+		double value;
+		Node(Transaction tx, int index, double value) {
+			this.tx = tx;
+			this.index = index;
+			this.value = value;
+		}
+	}
 	private UTXOPool uPool;
+	private Double maxV = 0.0;
+	private List<Node> rst = new ArrayList<Node>();
     public MaxFeeTxHandler(UTXOPool utxoPool) {
         // IMPLEMENT THIS
     	uPool = new UTXOPool(utxoPool);
@@ -62,10 +74,69 @@ public class MaxFeeTxHandler {
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
         // IMPLEMENT THIS
-    	因为每次加入一个valid transaction都要update UTXOPool(remove inputs, add outputs)， 而UTXOPool决定了下一个transaction是不是valid的， 并且它还决定了一个transaction的fee
-    	所以不能简单地将possibleTXs按照fee的大小排序。
-    	根据每个transaction的inputs所对应的UTXO，将所有的transaction连接成graph (前一个transaction的output的UTXO是后一个transaction的input)，并且做拓扑排序，枚举每个拓扑排序的sum of fees，求最大值所对应的transaction set
-	或者作DFS枚举每个可能的组合
+    	boolean[] isused = new boolean[possibleTxs.length];
+    	helper(possibleTxs, isused, new ArrayList<Node>());
+    	Transaction[] rstArray = new Transaction[rst.size()];
+    	for (int i = 0; i < rstArray.length; ++i) {
+    		rstArray[i] = rst.get(i).tx;
+    	}
+    	return rstArray;
     }
-
+    private void helper(Transaction[] possibleTxs, boolean[] isused, List<Node> candidates) {
+    	Set<Node> sets = new HashSet<Node>();
+    	for (int i = 0; i < possibleTxs.length; ++i) {
+    		if (!isused[i] && isValidTx(possibleTxs[i])) {
+    			sets.add(new Node(possibleTxs[i], i, calFee(possibleTxs[i])));
+    		}
+    	}
+    	if (sets.isEmpty()) {
+    		calculate(candidates);
+    	} else {
+    		for (Node node : sets) {
+    			int index = node.index;
+    			Transaction tx = node.tx;
+    			isused[index] = true;
+    			candidates.add(node);
+    			UTXOPool backup = new UTXOPool(uPool);
+    			updatePool(tx);
+    			helper(possibleTxs, isused, candidates);
+    			uPool = new UTXOPool(backup);
+    			candidates.remove(candidates.size() - 1);
+    			isused[index] = false;
+    		}
+    	}
+    }
+    private void updatePool(Transaction tx) {
+    	for (Transaction.Input input : tx.getInputs()) {
+			UTXO uo = new UTXO(input.prevTxHash, input.outputIndex);
+			uPool.removeUTXO(uo);
+		}
+		for (int i = 0; i < tx.numOutputs(); ++i) {
+			UTXO uo = new UTXO(tx.getHash(), i);
+			uPool.addUTXO(uo, tx.getOutput(i));
+		}
+    }
+    private void calculate(List<Node> list) {
+    	double sum = 0.0;
+    	for (Node node : list) {
+    		sum += node.value;
+    	}
+    	if (Double.valueOf(sum).compareTo(maxV) > 0) {
+    		maxV = Double.valueOf(sum);
+    		rst = list;
+    	}
+    }
+    private double calFee(Transaction tx) {
+    	double inputV = 0;
+    	double outputV = 0;
+    	for (Transaction.Input input : tx.getInputs()) {
+    		UTXO uo = new UTXO(input.prevTxHash, input.outputIndex);
+    		Transaction.Output output = uPool.getTxOutput(uo);
+    		inputV += output.value;
+    	}
+    	for (Transaction.Output output : tx.getOutputs()) {
+    		outputV += output.value;
+    	}
+    	return inputV - outputV;
+    }
 }
