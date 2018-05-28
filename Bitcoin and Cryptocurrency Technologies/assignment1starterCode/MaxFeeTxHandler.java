@@ -63,7 +63,7 @@ public class MaxFeeTxHandler {
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
         // IMPLEMENT THIS
     	因为每次加入一个valid transaction都要update UTXOPool(remove inputs, add outputs)， 而UTXOPool决定了下一个transaction是不是valid的， 并且它还决定了一个transaction的fee
-    	所以不能简单地将possible按照fee的大小排序。
+    	所以不能简单地将possibleTXs按照fee的大小排序。
     	根据每个transaction的inputs所对应的UTXO，将所有的transaction连接成graph (前一个transaction的output的UTXO是后一个transaction的input)，并且做拓扑排序，枚举每个拓扑排序的sum of fees，求最大值所对应的transaction set
 	或者作DFS枚举每个可能的组合
     }
