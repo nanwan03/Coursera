@@ -42,7 +42,7 @@ totalout = 0
 for i in range(5000):
     X, Y = generateData(20)
     s, theta, errin = decision_stump(X, Y)
-    errout = 0.5+0.3*s*(math.fabs(theta)-1)
+    errout = 0.5 + 0.3 * s * (math.fabs(theta) - 1)
     totalin += errin
     totalout += errout
 print('训练集平均误差: ', totalin/5000)
@@ -50,9 +50,9 @@ print('测试集平均误差: ', totalout/5000)
 X, Y = loadData('hw2_train.dat')
 Xtest, Ytest = loadData('hw2_test.dat')
 pos, s, theta, err = decision_stump_multi(X, Y)
-print('训练集误差: ', err)
-ypred = s*np.sign(Xtest[:, pos]-theta)
+ypred = s * np.sign(Xtest[:, pos] - theta)
 ypred[ypred == 0] = -1
 row, col = Ytest.shape
-errout = np.sum(ypred != Ytest.reshape(row,))/len(ypred)
+errout = np.sum(ypred != Ytest.reshape(row, )) / len(ypred)
+print('训练集误差: ', err)
 print('测试集误差: ', errout)
