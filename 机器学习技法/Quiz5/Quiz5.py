@@ -60,7 +60,7 @@ print(gamma[np.argmin(eout)])
 
 Ytemp = transform(Y, 0)
 evali = 0
-for j in range(100):
+for i in range(100):
     randops = np.random.permutation(row)
     Xval = X[randops[0:1000], :]
     Yval = Ytemp[randops[0:1000]]
